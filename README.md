@@ -17,24 +17,35 @@ the current html tag. Every value whose key is of type number
 is considered to be the data that should be enclosed between 
 the specified html tags.
 
+h5tk can be used to produce unformatted and formatted html markup.
+In formatting mode, the number of intendation spaces can be adjusted. 
+
+## Initialization
+
+	local h5tk = require[[h5tk]].init(true, 4)
+	-- init accepts two arguments, the first should be
+	-- of type bool, the other of type number.
+	-- The first argument toggles formatting of the html code
+	-- The number represents the intendation spaces per nesting level
+
 ## Basic workings
 
-	h5tk.tr{
+	h5tk.emit(h5tk.tr{
 		someattr = "attrvalue"
 		h5tk.td{"foo1"},
 		h5tk.td{"foo2"},
 		h5tk.td{"boo3"},
 		h5tk.td{"boo4"}
-	}
+	})
 	
 After the first evaluation step, the table that h5tk.tr gets would
 look like this
 
-	h5tk.tr{someattr = "attrvalue", 
+	h5tk.emit(h5tk.tr{someattr = "attrvalue", 
 		"<td>foo1</td>", 
 		"<td>foo2</td>", 
 		"<td>boo3</td>", 
-		"<td>boo4</td>"}
+		"<td>boo4</td>"})
 		
 Now, since someattr is a string key, the call to h5tk.tr produces the
 following code:
@@ -53,7 +64,7 @@ on top of you table.
 ## Function evaluation
 Lets put some more data in our table.
 
-	h5tk.tr{someattr = "attrvalue",
+	h5tk.emit(h5tk.tr{someattr = "attrvalue",
 		(function () return h5tr.td{"funcgenfoo"} end),
 		h5tr.td{true},
 		{"nested1", "nested2", {"subnested1", "foonested2"}},
@@ -61,7 +72,7 @@ Lets put some more data in our table.
 		"<td>foo2</td>", 
 		"<td>boo3</td>",  
 		"<td>boo4</td>"
-	}
+	})
 	
 Lets tackle that step-by-step
 * The function gets evaluated and calls h5tr.td... which, in turn generates a string that'll be put into the table
@@ -74,7 +85,7 @@ Just imagine you would want to emit html code
 that represents a table. 
 With h5tk it's as simple as the following snippet:
 
-	    h5tk.table{
+	h5tk.emit(h5tk.table{
             h5tk.tr{
 			h5tk.th{"First"},
 			h5tk.th{"Second"},
@@ -88,7 +99,7 @@ With h5tk it's as simple as the following snippet:
                 h5tk.td{"boo3"},
                 h5tk.td{"foo4"}
             }
-        }
+        })
 
 This would genreate the following code:
 		
@@ -107,7 +118,7 @@ For a more complex example, consider this:
 		local h5tk = require[[h5tk]]
 
 		io.write("<!DOCTYPE html>")
-		io.write(h5tk.html{
+		io.write(h5tk.emit(h5tk.html{
 			h5tk.head{
 				h5tk.style{
 					"table, th, td { border: 1px solid black; }"
@@ -145,7 +156,7 @@ For a more complex example, consider this:
 					}
 				}
 			}
-		})
+		}))
 
 The code above emits a valid html5 page and _could_ be used
 as cgi script for dynamic webcontent. Here is the generated output:
