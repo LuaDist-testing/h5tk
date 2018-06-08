@@ -1,17 +1,9 @@
--- This file was automatically generated for the LuaDist project.
-
 package = "h5tk"
 version = "2.2-1"
--- LuaDist source
 source = {
-  tag = "2.2-1",
-  url = "git://github.com/LuaDist-testing/h5tk.git"
+	url = "git://github.com/forflo/h5tk",
+	tag = "v4.2"
 }
--- Original source
--- source = {
--- 	url = "git://github.com/forflo/h5tk",
--- 	tag = "v4.2"
--- }
 
 description = {
 	summary = "H5tk - An erector like html5 code generation toolkit for lua",

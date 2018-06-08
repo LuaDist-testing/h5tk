@@ -12,16 +12,28 @@ local fast_traverse_aux, fast_traverse_attr, fast_traverse_data
 local fmt_helper, fast_helper
 	
 local html_elements_special = {
-	" area base br col embed track hr source param meta img link keygen input ",
+    ["area"] = true, ["base"] = true, ["br"] = true, ["col"] = true, ["embed"] = true, ["track"] = true,
+    ["hr"] = true, ["source"] = true, ["param"] = true, ["meta"] = true, ["img"] = true, ["link"] = true,
+    ["keygen"] = true, input= true
 }
 
 local html_elements_normal = {
-	" a abbr address article aside audio b bdi bdo blockquote body button canvas caption ",
-	" code colgroup datalist dd del	details dfn dialog div dl dt em fieldset figcaption ",
-	" figure footer form h1 h2 h3 h4 h5 h6 head header html i iframe ins kbd label legend ",
-	" li main map mark menu menuitem meter nav noscript object ol optgroup option output ",
-	" p pre progress q rp rt ruby s samp script section select small span style sub summary ",
-	" sup table tbody td textarea tfoot th thead time title tr u ul var video wbr ",
+    ["a"] = true, ["abbr"] = true, ["address"] = true, ["article"] = true, ["aside"] = true,
+    ["audio"] = true, ["b"] = true, ["bdi"] = true, ["bdo"] = true, ["blockquote"] = true,
+    ["body"] = true, ["button"] = true, ["canvas"] = true, ["caption"] = true, ["code"] = true,
+    ["colgroup"] = true, ["datalist"] = true, ["dd"] = true, ["del"] = true, ["details"] = true,
+    ["dfn"] = true, ["dialog"] = true, ["div"] = true, ["dl"] = true, ["dt"] = true, ["em"] = true,
+    ["fieldset"] = true, ["figcaption"] = true, ["figure"] = true, ["footer"] = true, ["form"] = true,
+    ["h1"] = true, ["h2"] = true, ["h3"] = true, ["h4"] = true, ["h5"] = true, ["h6"] = true, ["head"] = true,
+    ["header"] = true, ["html"] = true, ["i"] = true, ["iframe"] = true, ["ins"] = true, ["kbd"] = true,
+    ["label"] = true, ["legend"] = true, ["li"] = true, ["main"] = true, ["map"] = true, ["mark"] = true,
+    ["menu"] = true, ["menuitem"] = true, ["meter"] = true, ["nav"] = true, ["noscript"] = true, ["object"] = true,
+    ["ol"] = true, ["optgroup"] = true, ["option"] = true, ["output"] = true, ["p"] = true, ["pre"] = true,
+    ["progress"] = true, ["q"] = true, ["rp"] = true, ["rt"] = true, ["ruby"] = true, ["s"] = true, ["samp"] = true,
+    ["script"] = true, ["section"] = true, ["select"] = true, ["small"] = true, ["span"] = true, ["style"] = true,
+    ["sub"] = true, ["summary"] = true, ["sup"] = true, ["table"] = true, ["tbody"] = true, ["td"] = true,
+    ["textarea"] = true, ["tfoot"] = true, ["th"] = true, ["thead"] = true, ["time"] = true, ["title"] = true,
+    ["tr"] = true, ["u"] = true, ["ul"] = true, ["var"] = true, ["video"] = true, ["wbr"] = true
 }
 
 function buffer_get()
@@ -37,16 +49,15 @@ function buffer_add(buffer, string)
 end
 
 function is_html_normal(string)
-	for i=1,#html_elements_normal do
-		if string.find(html_elements_normal[i], " " .. string .. " ") then
-			return true
-		end
-	end
-	return false
+	if html_elements_normal[string] then
+		return true
+    else
+	    return false
+    end
 end
 
 function is_html_special(string)
-	if string.find(html_elements_special[1], " " .. string .. " ") then
+	if html_elements_special[string] then
 		return true
 	else
 		return false
@@ -201,8 +212,7 @@ function fast_traverse_attr(table)
 	for k, v in pairs(table) do
 		if type(k) == "string" then
 			buffer_add(attr, " " .. k .. "=\"")
-			buffer_add(attr, fast_traverse_aux(v))
-			buffer_add(attr, "\"")
+			buffer_add(attr, fast_traverse_aux(v) .. "\"")
 		end
 	end
 	
@@ -218,8 +228,6 @@ function fmt_helper(sub, html)
 	if s and n then error(err_twice_tag .. " " .. sub) end
 	
 	tree_addnode(tree, "<" .. sub .. fmt_traverse_attr(html) .. ">")
-	-- only the tags listed in html_elements_normal can
-	-- contain content and have an end tag
 	if n then
 		tree_addnode(tree, fmt_traverse_data(html))
 		tree_addnode(tree, "</" .. sub .. ">")
@@ -247,11 +255,9 @@ function fast_helper(sub, html)
 	return buffer_tostring(buf)					
 end
 	
--- used to encapsulate functions that depend on a
--- certain configuration
-function logic_builder(format, n_spaces, tabs)
-	local logic  = {}
-	-- configuration variables and standards
+function emitter_builder(format, n_spaces, tabs)
+	local emitter  = {}
+
 	local this_format = format
 	local this_num_sep = n_spaces
 	local this_use_tabs = tabs 
@@ -270,11 +276,11 @@ function logic_builder(format, n_spaces, tabs)
 	if type(tabs) == "boolean" then this_use_tabs = tabs else
 		this_use_tabs = false
 	end
-	
+
 	function tree_collapse(lvl, tree)
 		local bigbuf = buffer_get()
 		local meta = getmetatable(tree)
-	
+
 		for _, v in pairs(tree) do
 			if type(v) == "table" then
 				if meta == nil then
@@ -289,8 +295,7 @@ function logic_builder(format, n_spaces, tabs)
 	
 		return buffer_tostring(bigbuf)
 	end
-	
-	
+
 	function fmt_add_sep(lvl, string)
 		local buf = buffer_get()
 	
@@ -300,7 +305,7 @@ function logic_builder(format, n_spaces, tabs)
 		buffer_add(buf, string)
 		return buffer_tostring(buf)
 	end
-	
+
 	function fmt_calc_sep()
 		local sep = " "
 		local buf = buffer_get()
@@ -312,7 +317,7 @@ function logic_builder(format, n_spaces, tabs)
 		
 		return buffer_tostring(buf)
 	end
-	
+
 	function emit(tree)
 		if this_format then
 			return tree_collapse(0, tree)
@@ -322,39 +327,33 @@ function logic_builder(format, n_spaces, tabs)
 	end
 
 	this_lvl_sep = fmt_calc_sep()
-
-	logic.emit = emit	
-	logic.fast_helper = fast_helper
-	logic.fmt_helper = fmt_helper
-	
-	return logic
+	emitter.emit = emit	
+	return emitter
 end
 
 function init(format, n_spaces, tabs)
-	local meta = { __index = nil}
-	local logic = logic_builder(format, n_spaces, tabs)
+    local h5tk_instance
+	local h5tk_meta = { __index = nil}
+	local emitter = emitter_builder(format, n_spaces, tabs)
 
-	if format == true then
-		meta.__index = function(tab, sub)
+	if format then
+		h5tk_meta.__index = function(tab, sub)
 			return function(html)
-				return logic.fmt_helper(sub, html)
+				return fmt_helper(sub, html)
 			end
 		end
 	else
-		meta.__index = function(tab, sub)
+		h5tk_meta.__index = function(tab, sub)
 			return function(html)
-				return logic.fast_helper(sub, html)
+				return fast_helper(sub, html)
 			end
 		end
 	end
 
-	local h5tk = {
-		emit = logic.emit, 
-	}
+	h5tk_instance = { emit = emitter.emit }
+	setmetatable(h5tk_instance, h5tk_meta)
 
-	setmetatable(h5tk, meta)
-
-	return h5tk
+	return h5tk_instance
 end
 
-return {init = init}
+return { init = init }
